@@ -33,7 +33,10 @@ jobs:
         with:
           context: ./backend
           push: true
-          tags: neoaitoolsacr.azurecr.io/llmcost-backend:latest
+          no-cache: true
+          tags: |
+            neoaitoolsacr.azurecr.io/llmcost-backend:latest
+            neoaitoolsacr.azurecr.io/llmcost-backend:${{ github.sha }}
 
       - name: Update Container App via Azure CLI
         run: |
@@ -45,4 +48,4 @@ jobs:
           az containerapp update \
             --name ${{ env.CONTAINER_APP_NAME }} \
             --resource-group ${{ secrets.AZURE_RESOURCE_GROUP }} \
-            --image ${{ env.ACR_REGISTRY }}/${{ env.IMAGE_NAME }}:latest
+            --image ${{ env.ACR_REGISTRY }}/${{ env.IMAGE_NAME }}:${{ github.sha }}
