@@ -13,8 +13,22 @@ const enc = get_encoding('cl100k_base');
 const app = express();
 const PORT = process.env.PORT || 3001;
 
-app.use(cors({ origin: /^http:\/\/localhost(:\d+)?$/ }));
+const ALLOWED_ORIGINS = [
+  /^http:\/\/localhost(:\d+)?$/,
+  /^https:\/\/.*\.azurestaticapps\.net$/,
+];
+app.use(cors({ origin: (origin, cb) => cb(null, !origin || ALLOWED_ORIGINS.some(r => r.test(origin))) }));
 app.use(express.json());
+
+// Config endpoint — tells the frontend what's pre-configured
+app.get('/api/config', (_req, res) => {
+  const azureModels = Object.keys(process.env).filter(k => k.startsWith('AZURE_MODEL_') && k.endsWith('_ENDPOINT'));
+  res.json({
+    anthropicConfigured: !!process.env.ANTHROPIC_API_KEY,
+    azureConfigured: azureModels.length > 0,
+    githubConfigured: !!process.env.GITHUB_TOKEN,
+  });
+});
 
 app.get('/api/models', (_req, res) => {
   res.json(MODELS);
@@ -186,7 +200,7 @@ app.post('/api/tokenize', (req, res) => {
 app.use('/api/azure', azureRoutes);
 
 app.get('/api/health', (_req, res) => {
-  res.json({ ok: true, keySet: !!process.env.ANTHROPIC_API_KEY });
+  res.json({ ok: true, keySet: !!process.env.ANTHROPIC_API_KEY, clientToolsSupport: true });
 });
 
 app.listen(PORT, () => {
